@@ -33,6 +33,7 @@ variable "health_check_path" {
 locals {
   # ECR names must be lowercase alphanumeric and hyphens only
   ecr_name = lower(replace(replace(var.project_name, "_", "-"), " ", "-"))
+  container_image = var.container_image != "" ? var.container_image : "nginx:latest"
 }
 
 # ── ECR ────────────────────────────────────────────────────────────────────────
@@ -184,7 +185,7 @@ resource "aws_ecs_task_definition" "app" {
   container_definitions = jsonencode([
     {
       name      = var.project_name
-      image     = var.container_image
+      image     = local.container_image
       essential = true
 
       portMappings = [
@@ -197,15 +198,3 @@ resource "aws_ecs_task_definition" "app" {
       environment = [
         { name = "PORT", value = tostring(var.app_port) },
         { name = "APP_ENV", value = "production" }      ]
-
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = "/ecs/${var.project_name}"
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "ecs"
-        }
-      }
-    }
-  ])
-}
